@@ -1,0 +1,23 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  skills:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate skill frontmatter and structure
+        run: python3 tools/validate_skills.py skills
+
+      - name: Compile every skill script
+        run: python3 -m compileall -q skills && echo "all skill scripts compile"
