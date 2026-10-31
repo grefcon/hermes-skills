@@ -34,10 +34,11 @@ bounded upstream calls, and install/type defects the export ships with.
 
 ## Quick Reference
 
+- Launch keyless: `terminal(command="GEMINI_API_KEY='' AUTO_DEV_API_KEY='' npm run dev")`
 - Read the platform log: `terminal(command="…")` on the deploy provider's log view
-- Spoofed host check: `curl -s -o /dev/null -w '%{http_code}' -H 'Host: <host>' http://127.0.0.1:3000/`
+- Spoofed host check: `curl -s -o /dev/null -w '%{http_code}' -H 'Host: <host>' http://localhost:3000/`
 - Free the port: `terminal(command="lsof -ti:3000 | xargs -r kill -9")`
-- Keyless sweep: `terminal(command="python3 scripts/smoke_wpengine.py --host <host> --probes probes.json")`
+- Keyless sweep: `terminal(command="python3 scripts/smoke_wpengine.py --host-to-spoof <host> --probes probes.json")`
 - Lint + compile: `npx tsc --noEmit` and `npm run build`
 - Hunt a baked-in key: `search_files(pattern="sk_|AIza")`
 
@@ -115,17 +116,18 @@ bounded upstream calls, and install/type defects the export ships with.
 
 ## Verification
 
-Run `scripts/smoke_wpengine.py`. It starts the app the way a secret-less host does and
-checks all three failure modes. Every check must pass before you call the conversion done:
+Launch the app keyless, then run `scripts/smoke_wpengine.py` against it. Every check must
+pass before you call the conversion done:
 
-- **Keyless sweep** — launch with the keys forced to empty strings. Every endpoint must
-  return 2xx, sub-second. The script does this; if launching the server yourself, note
-  that dotenv does not override an existing variable, so `GEMINI_API_KEY=''` in the child
-  env reproduces WP Engine's zero-secret environment without touching `.env`.
-- **Failing-key sweep** — repeat with a real (even bogus) key set. Require bounded 2xx
+- **Keyless sweep** — start the app with the keys forced to empty strings, then probe
+  every route; each must answer 2xx, sub-second. dotenv does not override a variable that
+  already exists, so an empty value in the environment reproduces a zero-secret host
+  without touching `.env`. The script derives a probe skeleton from `server.ts` when you
+  have not written one.
+- **Failing-key sweep** — relaunch with a real (even bogus) key set. Require bounded 2xx
   and no hang; treat a hang as a failure, never as slowness.
-- **Host check** — the spoofed `Host` header returns 200.
+- **Host check** — the spoofed `Host` header returns 200, not the blocked-request body.
 - **Build** — `npx tsc --noEmit` and `npm run build` both clean.
-- **Deployed** — load the WP Engine URL and confirm it is the app, not the 403 body.
+- **Deployed** — load the WP Engine hostname and confirm it is the app, not the 403 body.
 
-See `references/patches.md` for the exact edits and a key-baked-into-source search.
+See `references/patches.md` for the exact edits and a search for any key baked into source.

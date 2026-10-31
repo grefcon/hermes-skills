@@ -55,16 +55,20 @@ override a variable that already exists, so this reproduces a zero-secret host
 **without touching `.env`**. It then checks that the site loads, that the platform's
 `Host` header is accepted, and that every route answers.
 
-- **FAIL** — a 5xx, or any request that hangs (a hang is a failure, never slowness)
-- **WARN** — a 400, i.e. the route is alive but needs a real payload
+- **FAIL** — a 5xx; a hang (a hang is a failure, never slowness); a `404` (a stale
+  probe, or a different app answering on that port); or a `200` whose body is the SPA
+  shell instead of JSON, because a dev server answers an unknown path with HTML — that
+  reads as success until you check the body
+- **WARN** — a `400`: the route exists but needs a real payload
 - A documented exception can be allowed per probe, e.g. a keyless VIN-decode `503`
 
 Exit code `0` means the conversion holds. Supply `--probes probes.json` for real
 payloads; without it a skeleton is generated from `server.ts`.
 
-The check was validated in **both** directions: 11/11 pass against a converted app,
-and exit `1` with a `403 → FAIL` row when the allowed-host list is deliberately
-restricted. A verification step that cannot fail is not a verification step.
+Validated in every direction that matters: `11/11` against the converted commit from
+a clean clone (`npm install` included), and exit `1` both for a deliberately bogus
+route and for a restricted allowed-host list (`403 → FAIL`). A verification step that
+cannot fail is not a verification step.
 
 ## Repository layout
 
